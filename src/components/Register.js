@@ -53,6 +53,8 @@ const Register = (props) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [password_confirmation, setPassword_confirmation] = useState("");
+  const [tc, setTc] = useState(true);
   const [successful, setSuccessful] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -71,16 +73,21 @@ const Register = (props) => {
     setPassword(password);
   };
 
+  const onChangePasswordCon = (e) => {
+    const password = e.target.value;
+    setPassword_confirmation(password);
+  };
+
   const handleRegister = (e) => {
     e.preventDefault();
 
     setMessage("");
     setSuccessful(false);
-
+    console.log(password_confirmation)
     form.current.validateAll();
 
     if (checkBtn.current.context._errors.length === 0) {
-      AuthService.register(username, email, password).then(
+      AuthService.register(username, email, password, password_confirmation, tc).then(
         (response) => {
           setMessage(response.data.message);
           setSuccessful(true);
@@ -113,11 +120,11 @@ const Register = (props) => {
           {!successful && (
             <div>
               <div className="form-group">
-                <label htmlFor="username">Username</label>
+                <label htmlFor="username">Name</label>
                 <Input
                   type="text"
                   className="form-control"
-                  name="username"
+                  name="name"
                   value={username}
                   onChange={onChangeUsername}
                   validations={[required, vusername]}
@@ -147,6 +154,34 @@ const Register = (props) => {
                   validations={[required, vpassword]}
                 />
               </div>
+
+              <div className="form-group">
+                <label htmlFor="password_confirmation">Confirm Password</label>
+                <Input
+                  type="password"
+                  className="form-control"
+                  name="password_confirmation"
+                  value={password_confirmation}
+                  onChange={onChangePasswordCon}
+                  validations={[required, vpassword]}
+                />
+              </div>
+
+
+              <div className="form-group">
+                <label htmlFor="tc">Tc</label>
+                <Input
+                  // type="tc"
+                  className="form-control"
+                  name="tc"
+                  value={'true'}
+                  // onChange={onChangePassword}
+                  // validations={[required, vpassword]}
+                />
+              </div>
+              
+
+             
 
               <div className="form-group">
                 <button className="btn btn-primary btn-block">Sign Up</button>
