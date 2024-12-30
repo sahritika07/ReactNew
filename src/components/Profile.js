@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import AuthService from "../services/auth.service";
 import axios from "axios";
 
@@ -23,6 +23,12 @@ const Profile = () => {
   const [totalPages, setTotalPages] = useState();
   
   const [itemsPerPage] = useState(5); // Items per page
+
+  const [selectedImage, setSelectedImage] = useState(""); // Selected profile image
+  const [isEditing, setIsEditing] = useState(false); // Editing state
+  const fileInputRef = useRef(null); // Ref for the file input
+  const [secureUrl, setSecureUrl] = useState("")
+
   
 
 
@@ -82,56 +88,7 @@ const Profile = () => {
 
 // const [users, setUsers] = useState("")
 console.log("id=",userID?.user?._id)
-  // const handleGetUsers = async () => {
-  //   console.log("id=",userID?.user?._id)
-  //   try {
-  //     const response = await axios.get(
-  //       `http://localhost:8000/api/user/users?id=${userID?.user?._id}&page=${currentPage}&limit=${itemsPerPage}&search=${searchQuery}&sort=dsc`
-  //     );
-  //      // Backend API URL
-      
-  //     if (response.data.status === 'success') {
-  //       console.log('Fetched users:', response.data);
-  //       setUserData(response?.data?.users);
-  //       setTotalPages(response?.data?.totalPages)  // Store fetched users in the state
-  //     } else {
-  //       alert(response.data.message);
-  //     }
-  //   } catch (error) {
-  //     console.error('There was an error fetching the users!', error);
-  //     alert('Failed to fetch users');
-  //   }
-  // };
-
-  // const handleGetUsers = async (sortOrder = "asc") => {
-  //   console.log("id=", userID?.user?._id);
-  //   try {
-  //     const response = await axios.get(
-  //       `http://localhost:8000/api/user/users`, 
-  //       {
-  //         params: {
-  //           id: userID?.user?._id,
-  //           page: currentPage,
-  //           limit: itemsPerPage,
-  //           search: searchQuery,
-  //           sort: sortOrder, // Dynamic sort order
-  //         },
-  //       }
-  //     );
-  
-  //     if (response.data.status === "success") {
-  //       console.log("Fetched users:", response.data);
-  //       setUserData(response?.data?.users);
-  //       setTotalPages(response?.data?.totalPages); // Store fetched users in the state
-  //     } else {
-  //       alert(response.data.message);
-  //     }
-  //   } catch (error) {
-  //     console.error("There was an error fetching the users!", error);
-  //     alert("Failed to fetch users");
-  //   }
-  // };
-
+ 
   const handleGetUsers = async () => {
     console.log("id=", userID?.user?._id);
     try {
@@ -275,82 +232,157 @@ const updateUser = (id) => {
     }, [currentPage, searchQuery]);
 
 
-    // const handleSortByName = () => {
-      
-    //   const sortedData = [...userData].sort((a, b) => {
-    //     if (sortOrder === "asc") {
-    //       return a.name.localeCompare(b.name); // Ascending order
-    //     } else {
-    //       return b.name.localeCompare(a.name); // Descending order
-    //     }
-    //   });
-    
-    //   // Toggle sort order
-    //   setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    //   setUserData(sortedData); // Update the userData state with sorted data
-    // };
+  //   const handleFileChange = (e) => {
+  //     const file = e.target.files[0]; // Get the selected file
+  //     console.log(file)
+  //     if (file) {
+  //         const imageUrl = URL.createObjectURL(file); // Create a local URL for the image
+  //         setSelectedImage(imageUrl); // Set the selected image URL to display
+  //         console.log("File selected:", file); // Log the selected file
+  //         uploadImage(file);
+
+  //     }
+  // };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]; // Get the selected file
+    if (file) {
+        const imageUrl = URL.createObjectURL(file); // Create a local URL for the image
+        setSelectedImage(imageUrl); // Set the selected image URL to display
+        console.log("File selected:", file); // Log the selected file
+
+        // Call the function to upload the image to the backend
+        uploadImage(file);
+    }
+};
+
+  const uploadImage = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append("image", file); // Append the image file to the FormData object
+
+        const response = await fetch("http://localhost:8000/api/user/usersurl", {
+            method: "POST",
+            body: formData,
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log("Image uploaded successfully:", data);
+            
+            setSecureUrl(data?.data?.secure_url)
+           
+            // You can update the UI with the response if needed
+        } else {
+            console.error("Failed to upload image:", response.statusText);
+        }
+    } catch (error) {
+        console.error("Error uploading image:", error.message);
+    }
+};
+
+// const handleUpdateProfile = () => {
+//   // Log the secure URL to the console when update is clicked
+//   console.log("Secure URL of the image:", secureUrl);
+//   console.log(userID?.user?._id)
+// };
+
+// console.log(secureUrl)
+
+const updateProfile = async () => {
+  try {
+      if (!secureUrl) {
+          console.error("No secure URL available for updating profile.");
+          return;
+      }
+
+      const response = await fetch(`http://localhost:8000/api/user/update-user-image?id=${currentUser?.user?._id}`, {
+          method: "PUT",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ secureUrl }),
+      });
+
+      if (response.ok) {
+          const data = await response.json();
+          console.log("Profile updated successfully:", data);
+          alert("Profile updated successfully!");
+      } else {
+          console.error("Failed to update profile:", response.statusText);
+      }
+  } catch (error) {
+      console.error("Error updating profile:", error.message);
+  }
+};
+
+
+  // Open the file input dialog when the button is clicked
+  const handleChooseImageClick = () => {
+      fileInputRef.current.click(); // Trigger the file input click event
+  };
+
+
+  // Example function to send the image to the server
+  const sendImageToServer = (file) => {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      axios.post("/api/upload", formData, {
+          headers: {
+              "Content-Type": "multipart/form-data",
+          },
+      })
+      .then((response) => {
+          console.log("Image uploaded successfully:", response.data);
+      })
+      .catch((error) => {
+          console.error("Error uploading image:", error);
+      });
+  };
 
     
-
-    // Previous Code
-
-    // const fetchUsers = async () => {
-    //   setLoading(true);
-    //   try {
-    //     const response = await axios.get(`http://localhost:8000/api/user/users?id=${userID?.user?._id}&page=${currentPage}&limit=${itemsPerPage}&search=${searchQuery}&sort=dsc`
-    //       , {
-    //       params: {
-    //         sort: sortOrder, // Pass the current sort order
-    //         page: 1, // Example pagination values
-    //         itemsPerPage: 5,
-    //       },
-    //     });
-    //     setUserData(response.data.users);
-    //   } catch (error) {
-    //     console.error("Error fetching users:", error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-  
-    // Fetch users when the component mounts or sortOrder changes
-    // useEffect(() => {
-    //   fetchUsers();
-    // }, [sortOrder]);
-  
-    // // Handle sort toggle
-    // const handleSortByName = () => {
-    //   setSortOrder(sortOrder === "asc" ? "desc" : "asc"); // Toggle sort order
-    // };
-    
-
- 
   console.log(userData)
   return (
     <div className="container">
-      {/* <header className="jumbotron">
-        <h3>
-          <strong>{currentUser?.user?.name}</strong> Profile
-        </h3>
-      </header> */}
+
 
 <header className="jumbotron" style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-      {/* Dummy Profile Image */}
-      <img
-        src="https://picsum.photos/id/1/200/300" // Replace with your desired image URL
-        alt="Profile"
-        style={{
-          width: "80px",
-          height: "80px",
-          borderRadius: "50%",
-          objectFit: "cover",
-        }}
-      />
-      {/* User's Name */}
-      <h3>
-        <strong>{currentUser?.user?.name}</strong> Profile
-      </h3>
-    </header>
+            <div>
+                {/* Display the selected image or fallback to a dummy image */}
+                <img
+                    src={selectedImage || "https://picsum.photos/id/1/200/300"} // Fallback image
+                    alt="Profile"
+                    style={{
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                    }}
+                />
+                <button onClick={() => setIsEditing(true)}>Edit</button>
+                <button>Save</button>
+                {isEditing && (
+                <>
+                    {/* Hidden file input, triggered by the Choose Image button */}
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        // style={{ display: "none" }} // Hide the input field
+                        onChange={handleFileChange} // Call handleFileChange when a file is selected
+                    />
+                    {/* <button onClick={handleChooseImageClick}>Choose Image</button> */}
+                </>
+            )}
+            </div>
+            <h3>
+                <strong>{currentUser?.user?.name}</strong> Profile
+            </h3>
+            {/* <button>Update Profile</button> */}
+            <button onClick={updateProfile}>Update Profile</button>
+            
+        </header>
+
 
       <div>
       <h1>User Search</h1>
@@ -363,18 +395,7 @@ const updateUser = (id) => {
         }}
       />
       <button onClick={handleInputChange}>Search</button>
-      {/* <div>
-        <h2>Results:</h2>
-        {filteredUsers.length > 0 ? (
-          <ul>
-            {filteredUsers.map((user) => (
-              <li key={user.id}>{user.name}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>No users found.</p>
-        )}
-      </div> */}
+    
     </div>
 
       {/* User Table */}
