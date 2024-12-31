@@ -29,8 +29,11 @@ const Profile = () => {
   const fileInputRef = useRef(null); // Ref for the file input
   const [secureUrl, setSecureUrl] = useState("")
 
-  
+  const [profileImage, setProfileImage] = useState(
+    currentUser?.user?.profile || "https://picsum.photos/id/1/200/300" // Default image
+);
 
+  
 
   // const handleAddUser = async () => {
   //   try {
@@ -256,30 +259,58 @@ const updateUser = (id) => {
     }
 };
 
-  const uploadImage = async (file) => {
-    try {
-        const formData = new FormData();
-        formData.append("image", file); // Append the image file to the FormData object
 
-        const response = await fetch("http://localhost:8000/api/user/usersurl", {
-            method: "POST",
-            body: formData,
-        });
+//     try {
+//         const formData = new FormData();
+//         formData.append("image", file); // Append the image file to the FormData object
 
-        if (response.ok) {
-            const data = await response.json();
-            console.log("Image uploaded successfully:", data);
-            
-            setSecureUrl(data?.data?.secure_url)
-           
-            // You can update the UI with the response if needed
-        } else {
-            console.error("Failed to upload image:", response.statusText);
-        }
-    } catch (error) {
-        console.error("Error uploading image:", error.message);
-    }
+//         const response = await fetch("http://localhost:8000/api/user/usersurl", {
+//             method: "POST",
+//             body: formData,
+
+
+
+// const handleFileChange = (event) => {
+//   const file = event.target.files[0];
+//   if (file) {
+//       // Simulate uploading the image and setting the secure URL
+//       uploadImage(file);
+//   }
+// };
+
+const uploadImage = async (file) => {
+  try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("http://localhost:8000/api/user/usersurl", {
+          method: "POST",
+          body: formData,
+      });
+
+      if (response.ok) {
+          const data = await response.json();
+          setSecureUrl(data?.data?.secure_url); // Save secure URL to state
+          setSelectedImage(data?.data?.secure_url); // Display the new image
+          console.log("Image uploaded successfully:", data);
+      } else {
+          console.error("Failed to upload image:", response.statusText);
+      }
+  } catch (error) {
+      console.error("Error uploading image:", error.message);
+  }
 };
+
+// const handleUpdateProfile = () => {
+//   const userId = currentUser?.user?._id; // Get user ID from currentUser
+//   if (!userId || !secureUrl) {
+//       alert("Please upload an image before updating the profile.");
+//       return;
+//   }
+//   updateProfileImage(userId, secureUrl); // Call the function to update the profile
+// };
+
+
 
 // const handleUpdateProfile = () => {
 //   // Log the secure URL to the console when update is clicked
@@ -304,6 +335,8 @@ const updateProfile = async () => {
           body: JSON.stringify({ secureUrl }),
       });
 
+
+
       if (response.ok) {
           const data = await response.json();
           console.log("Profile updated successfully:", data);
@@ -317,29 +350,29 @@ const updateProfile = async () => {
 };
 
 
-  // Open the file input dialog when the button is clicked
-  const handleChooseImageClick = () => {
-      fileInputRef.current.click(); // Trigger the file input click event
-  };
+  // // Open the file input dialog when the button is clicked
+  // const handleChooseImageClick = () => {
+  //     fileInputRef.current.click(); // Trigger the file input click event
+  // };
 
 
-  // Example function to send the image to the server
-  const sendImageToServer = (file) => {
-      const formData = new FormData();
-      formData.append("image", file);
+  // // Example function to send the image to the server
+  // const sendImageToServer = (file) => {
+  //     const formData = new FormData();
+  //     formData.append("image", file);
 
-      axios.post("/api/upload", formData, {
-          headers: {
-              "Content-Type": "multipart/form-data",
-          },
-      })
-      .then((response) => {
-          console.log("Image uploaded successfully:", response.data);
-      })
-      .catch((error) => {
-          console.error("Error uploading image:", error);
-      });
-  };
+  //     axios.post("/api/upload", formData, {
+  //         headers: {
+  //             "Content-Type": "multipart/form-data",
+  //         },
+  //     })
+  //     .then((response) => {
+  //         console.log("Image uploaded successfully:", response.data);
+  //     })
+  //     .catch((error) => {
+  //         console.error("Error uploading image:", error);
+  //     });
+  // };
 
     
   console.log(userData)
@@ -351,7 +384,7 @@ const updateProfile = async () => {
             <div>
                 {/* Display the selected image or fallback to a dummy image */}
                 <img
-                    src={selectedImage || "https://picsum.photos/id/1/200/300"} // Fallback image
+                    src={profileImage} // Fallback image
                     alt="Profile"
                     style={{
                         width: "80px",
