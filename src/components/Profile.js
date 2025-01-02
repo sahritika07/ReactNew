@@ -12,6 +12,8 @@ const Profile = () => {
   const [userData, setUserData] = useState([]);
   const [sortOrder, setSortOrder] = useState("asc");
   // const [loading, setLoading] = useState(false);
+  const [showUpdateButton, setShowUpdateButton] = useState(false);
+
   
 
   // Edit state management
@@ -337,6 +339,7 @@ const updateProfile = async () => {
 
 
 
+
       if (response.ok) {
           const data = await response.json();
           console.log("Profile updated successfully:", data);
@@ -349,38 +352,51 @@ const updateProfile = async () => {
   }
 };
 
+const downloadCSV = async () => {
+  try {
+    const response = await fetch("http://localhost:8000/api/user/exportUser", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-  // // Open the file input dialog when the button is clicked
-  // const handleChooseImageClick = () => {
-  //     fileInputRef.current.click(); // Trigger the file input click event
-  // };
+    if (response.ok) {
+      // Extract filename from Content-Disposition header
+      const contentDisposition = response.headers.get("Content-Disposition");
+      const filename = contentDisposition
+        ? contentDisposition.split("filename=")[1]
+        : "userData.csv";
+
+      // Read response as a blob
+      const blob = await response.blob();
+
+      // Create a download link
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+
+      // Trigger download
+      link.click();
+
+      // Cleanup
+      URL.revokeObjectURL(link.href);
+    } else {
+      console.error("Failed to download CSV:", response.statusText);
+    }
+  } catch (error) {
+    console.error("Error downloading CSV:", error);
+  }
+};
 
 
-  // // Example function to send the image to the server
-  // const sendImageToServer = (file) => {
-  //     const formData = new FormData();
-  //     formData.append("image", file);
 
-  //     axios.post("/api/upload", formData, {
-  //         headers: {
-  //             "Content-Type": "multipart/form-data",
-  //         },
-  //     })
-  //     .then((response) => {
-  //         console.log("Image uploaded successfully:", response.data);
-  //     })
-  //     .catch((error) => {
-  //         console.error("Error uploading image:", error);
-  //     });
-  // };
-
-    
   console.log(userData)
   return (
     <div className="container">
 
 
-<header className="jumbotron" style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+     <header className="jumbotron" style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <div>
                 {/* Display the selected image or fallback to a dummy image */}
                 <img
@@ -393,33 +409,56 @@ const updateProfile = async () => {
                         objectFit: "cover",
                     }}
                 />
-                <button onClick={() => setIsEditing(true)}>Edit</button>
-                <button>Save</button>
-                {isEditing && (
-                <>
-                    {/* Hidden file input, triggered by the Choose Image button */}
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        // style={{ display: "none" }} // Hide the input field
-                        onChange={handleFileChange} // Call handleFileChange when a file is selected
-                    />
-                    {/* <button onClick={handleChooseImageClick}>Choose Image</button> */}
-                </>
-            )}
+                <div>
+                <button style={{ marginLeft: "-5px", marginTop: "10px", borderRadius: "4px" }} onClick={() => setIsEditing(true)}>
+    Edit Profile
+  </button>
+                </div>
+
+  {isEditing && (
+    <>
+      {/* Hidden file input, triggered by the Choose Image button */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => {
+          handleFileChange(e); // Call handleFileChange when a file is selected
+          setShowUpdateButton(true); // Show the "Update Profile" button
+        }}
+      />
+    </>
+  )}
+
             </div>
-            <h3>
+            <div>
+              
+            </div>
+            <h3 style={{marginTop:"-20px", fontSize:"34px", marginLeft:"-10px"}}>
                 <strong>{currentUser?.user?.name}</strong> Profile
             </h3>
             {/* <button>Update Profile</button> */}
-            <button onClick={updateProfile}>Update Profile</button>
+            {showUpdateButton && (
+    <button
+      onClick={() => {
+        const confirmed = window.confirm("Are you sure you want to update your profile?");
+        if (confirmed) {
+          updateProfile(); // Call the updateProfile function
+        }
+      }}
+    >
+      Update Profile
+    </button>
+  )}
             
         </header>
 
 
+        <h1>User Search</h1>
+      <div style={{ display: "flex", justifyContent:"space-between", gap: "15px" }} >
       <div>
-      <h1>User Search</h1>
-      <input
+     
+      <input 
+        style={{ borderRadius:"7px"}}
         type="text"
         placeholder="Search for a user..."
         // value={searchQuery}
@@ -427,9 +466,15 @@ const updateProfile = async () => {
           setSearchQuery(e.target.value)
         }}
       />
-      <button onClick={handleInputChange}>Search</button>
+      <button style={{ borderRadius:"7px", backgroundColor:"#4080ed", marginLeft:"5px", color:"white", outline:"none", border:"none" , paddingLeft:"5px" , paddingRight:"5px", paddingTop:"3px", paddingBottom:"3px",}} onClick={handleInputChange}>Search</button>
+      
     
     </div>
+    <div>
+    <button style={{ borderRadius:"7px", backgroundColor:"green", color:"white", outline:"none", border:"none" , padding:"5px", marginBottom:"7px"}}   onClick={downloadCSV}>Download CSV <i class="fa-solid fa-arrow-down"></i></button>
+    </div>
+      </div>
+     
 
       {/* User Table */}
 
@@ -511,7 +556,7 @@ const updateProfile = async () => {
         <td>{user?.email}</td>
         <td>{user?.roles}</td>
         <td>
-          <button onClick={() => handleEditUser(user)} className="btn btn-warning">
+          <button style={{marginRight:"7px" }} onClick={() => handleEditUser(user)} className="btn btn-warning">
             Edit
           </button>
           <button onClick={() => deleteUser(user?._id)} className="btn btn-danger">
@@ -526,6 +571,7 @@ const updateProfile = async () => {
 
 <div className="pagination-controls">
         <button
+          style={{marginRight:"7px" }}
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
           className="btn btn-secondary"
@@ -536,6 +582,7 @@ const updateProfile = async () => {
           Page {currentPage} of {totalPages}
         </span>
         <button
+        style={{marginLeft:"7px" }}
           onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
           disabled={currentPage === totalPages}
           className="btn btn-secondary"
@@ -545,7 +592,7 @@ const updateProfile = async () => {
       </div>
 
       {/* Add/Edit User Form */}
-      <div>
+      <div style={{marginTop:"7px" }}>
         <h4>{editUser ? "Edit User" : "Add New User"}</h4>
         <form
           onSubmit={(e) => {
@@ -587,7 +634,7 @@ const updateProfile = async () => {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary">
+          <button style={{marginBottom:"7px" }} type="submit" className="btn btn-primary">
             {editUser ? "Save Changes" : "Add User"}
           </button>
         </form>
